@@ -1,12 +1,23 @@
 use std::sync::Arc;
 
-use iced::widget::{button, container, row, scrollable, text, Column};
-use iced::{executor, Application, Command, Element, Length, Settings, Theme};
+use iced::widget::{button, column, row, scrollable, text, text_input, Column, Space};
+use iced::{alignment, executor, window, Application, Command, Element, Length, Settings, Theme};
 
 use anime::{load_data, Anime};
 
 fn main() -> Result<(), iced::Error> {
-    AnimeApp::run(Settings::default())
+    AnimeApp::run(Settings {
+        window: window::Settings {
+            size: iced::Size {
+                width: 1200.0,
+                height: 800.0,
+            },
+            resizable: (true),
+            decorations: (true),
+            ..Default::default()
+        },
+        ..Default::default()
+    })
 }
 
 struct AnimeApp {
@@ -40,6 +51,10 @@ impl Application for AnimeApp {
         String::from("Animes")
     }
 
+    fn theme(&self) -> Theme {
+        Theme::Dark
+    }
+
     fn update(&mut self, message: Message) -> iced::Command<Message> {
         match message {
             Message::DataLoaded(animes) => {
@@ -47,7 +62,6 @@ impl Application for AnimeApp {
                 Command::none()
             }
             Message::ButtonPressed(content) => {
-                println!("FUUUUCK");
                 self.display_content = content;
                 Command::none()
             }
@@ -55,28 +69,44 @@ impl Application for AnimeApp {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        //text_editor(&self.content).into()
-        let mut titles = Column::new();
+        let mut titles = Column::new()
+            .width(620)
+            .align_items(alignment::Alignment::Center);
+
+        let search_box = text_input("search...", "").padding(5);
 
         for a in self.data.iter() {
             let title_widget = button(text(a.title.clone()))
                 .padding(10)
-                .width(400)
+                .width(Length::FillPortion(1))
                 .on_press(Message::ButtonPressed(a.clone()));
             titles = titles.push(title_widget);
+            titles = titles.push(Space::with_height(3))
         }
 
-        let anime_list = scrollable(titles).height(Length::FillPortion(1)).width(400);
+        let anime_list = scrollable(titles)
+            .height(Length::FillPortion(1))
+            .width(Length::FillPortion(1));
 
-        let list_widget = container(anime_list);
-        let display_content = format!(
-            "{}\n{} - {}\n\n{}",
-            &self.display_content.title,
-            &self.display_content.start_date,
-            &self.display_content.end_date,
-            &self.display_content.synopsis
-        );
-        let display_widget = text(display_content);
+        let list_widget = column![search_box, anime_list];
+
+        let a = &self.display_content;
+
+        let display_widget = column![
+            text(&a.title)
+                .size(32)
+                .width(Length::FillPortion(1))
+                .horizontal_alignment(alignment::Horizontal::Center),
+            text(format!("({} - {})", a.start_date, a.end_date))
+                .width(Length::FillPortion(1))
+                .horizontal_alignment(alignment::Horizontal::Center),
+            Space::with_height(24),
+            text(&a.synopsis)
+                .width(Length::FillPortion(1))
+                .height(Length::FillPortion(1)),
+        ]
+        .width(600)
+        .padding(10);
 
         row![list_widget, display_widget].into()
     }

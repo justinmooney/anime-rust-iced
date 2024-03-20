@@ -41,8 +41,10 @@ pub fn load_data() -> Result<Vec<Anime>, Box<dyn Error>> {
     )?;
 
     let anime_iter = stmt.query_map([], |row| {
+        let mut title: String = row.get(0)?;
+        title = title.replace('\"', "");
         Ok(Anime {
-            title: row.get(0)?,
+            title,
             synopsis: row.get(1)?,
             start_date: row.get(2)?,
             end_date: row.get(3)?,
