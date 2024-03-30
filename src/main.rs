@@ -41,7 +41,7 @@ impl Application for AnimeApp {
         (
             Self {
                 data: Arc::new(Vec::new()),
-                display_content: Anime::new(),
+                display_content: Anime::default(),
             },
             Command::perform(get_animes(), Message::DataLoaded),
         )
