@@ -92,12 +92,21 @@ impl Application for AnimeApp {
 
         let a = &self.display_content;
 
+        let dates_str: String;
+        if a.start_date == a.end_date {
+            dates_str = format!("({})", a.start_date);
+        } else if !a.start_date.is_empty() & a.end_date.is_empty() {
+            dates_str = format!("({} - ongoing)", a.start_date);
+        } else {
+            dates_str = format!("({} - {})", a.start_date, a.end_date);
+        }
+
         let display_widget = column![
             text(&a.title)
                 .size(32)
                 .width(Length::FillPortion(1))
                 .horizontal_alignment(alignment::Horizontal::Center),
-            text(format!("({} - {})", a.start_date, a.end_date))
+            text(dates_str)
                 .width(Length::FillPortion(1))
                 .horizontal_alignment(alignment::Horizontal::Center),
             Space::with_height(24),
