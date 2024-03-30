@@ -3,7 +3,7 @@ use std::sync::Arc;
 use iced::widget::{button, column, row, scrollable, text, text_input, Column, Space};
 use iced::{alignment, executor, window, Application, Command, Element, Length, Settings, Theme};
 
-use anime::{load_data, Anime};
+use anime::{load_data, AnimeItem};
 
 fn main() -> Result<(), iced::Error> {
     AnimeApp::run(Settings {
@@ -21,14 +21,14 @@ fn main() -> Result<(), iced::Error> {
 }
 
 struct AnimeApp {
-    data: Arc<Vec<Anime>>,
-    display_content: Anime,
+    data: Arc<Vec<AnimeItem>>,
+    display_content: AnimeItem,
 }
 
 #[derive(Clone, Debug)]
 enum Message {
-    DataLoaded(Arc<Vec<Anime>>),
-    ButtonPressed(Anime),
+    DataLoaded(Arc<Vec<AnimeItem>>),
+    ButtonPressed(AnimeItem),
 }
 
 impl Application for AnimeApp {
@@ -41,7 +41,7 @@ impl Application for AnimeApp {
         (
             Self {
                 data: Arc::new(Vec::new()),
-                display_content: Anime::default(),
+                display_content: AnimeItem::default(),
             },
             Command::perform(get_animes(), Message::DataLoaded),
         )
@@ -112,6 +112,6 @@ impl Application for AnimeApp {
     }
 }
 
-async fn get_animes() -> Arc<Vec<Anime>> {
+async fn get_animes() -> Arc<Vec<AnimeItem>> {
     Arc::new(load_data().unwrap())
 }
