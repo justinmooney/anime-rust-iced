@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
-use iced::widget::{button, column, row, scrollable, text, text_input, Column, Space};
+use iced::widget::{
+    button, column, progress_bar, row, scrollable, text, text_input, Column, Space,
+};
 use iced::{alignment, executor, window, Application, Command, Element, Length, Settings, Theme};
 
-use anime::{load_data, AnimeItem};
+use anime::{get_downloader, load_data, AnimeItem, AnimeItemList};
 
 fn main() -> Result<(), iced::Error> {
     AnimeApp::run(Settings {
@@ -21,13 +23,14 @@ fn main() -> Result<(), iced::Error> {
 }
 
 struct AnimeApp {
-    data: Arc<Vec<AnimeItem>>,
+    data: Arc<AnimeItemList>,
     display_content: AnimeItem,
+    load_progress: f32,
 }
 
 #[derive(Clone, Debug)]
 enum Message {
-    DataLoaded(Arc<Vec<AnimeItem>>),
+    DataLoaded(Arc<AnimeItemList>),
     ButtonPressed(AnimeItem),
 }
 
@@ -40,8 +43,9 @@ impl Application for AnimeApp {
     fn new(_flags: Self::Flags) -> (Self, Command<Message>) {
         (
             Self {
-                data: Arc::new(Vec::new()),
+                data: Arc::new(AnimeItemList::default()),
                 display_content: AnimeItem::default(),
+                load_progress: 0.0,
             },
             Command::perform(get_animes(), Message::DataLoaded),
         )
@@ -75,7 +79,7 @@ impl Application for AnimeApp {
 
         let search_box = text_input("search...", "").padding(5);
 
-        for a in self.data.iter() {
+        for a in self.data.items.iter() {
             let title_widget = button(text(a.title.clone()))
                 .padding(10)
                 .width(Length::FillPortion(1))
@@ -92,21 +96,12 @@ impl Application for AnimeApp {
 
         let a = &self.display_content;
 
-        let dates_str: String;
-        if a.start_date == a.end_date {
-            dates_str = format!("({})", a.start_date);
-        } else if !a.start_date.is_empty() & a.end_date.is_empty() {
-            dates_str = format!("({} - ongoing)", a.start_date);
-        } else {
-            dates_str = format!("({} - {})", a.start_date, a.end_date);
-        }
-
         let display_widget = column![
             text(&a.title)
                 .size(32)
                 .width(Length::FillPortion(1))
                 .horizontal_alignment(alignment::Horizontal::Center),
-            text(dates_str)
+            text(a.display_date())
                 .width(Length::FillPortion(1))
                 .horizontal_alignment(alignment::Horizontal::Center),
             Space::with_height(24),
@@ -117,10 +112,23 @@ impl Application for AnimeApp {
         .width(600)
         .padding(10);
 
-        row![list_widget, display_widget].into()
+        let mut layout = column![];
+        if (1.0..99.0).contains(&self.load_progress) {
+            let progress = progress_bar(0.0..=100.0, self.load_progress);
+            layout = layout.push(progress);
+        }
+        layout = layout.push(row![list_widget, display_widget]);
+
+        layout.into()
     }
 }
 
-async fn get_animes() -> Arc<Vec<AnimeItem>> {
+async fn get_animes() -> Arc<AnimeItemList> {
+    let mut downloader = get_downloader().unwrap();
+    while downloader.has_remaining() {
+        println!("{:#?}", downloader);
+        downloader.fetch_next();
+    }
+
     Arc::new(load_data().unwrap())
 }
