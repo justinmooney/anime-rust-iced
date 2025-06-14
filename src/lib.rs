@@ -28,21 +28,27 @@ impl Database {
                 title VARCHAR,
                 synopsis VARCHAR,
                 start_date VARCHAR,
-                end_date VARCHAR
+                end_date VARCHAR,
+                cover_image VARCHAR
             )",
         )
     }
 
     fn insert_anime_batch(&self, anime_list: AnimeListResponse) {
         for anime in anime_list.data.into_iter() {
+            let img = match anime.attributes.cover_image {
+                Some(covers) => covers.original.unwrap_or("".to_owned()),
+                None => "".to_owned(),
+            };
             self.conn
                 .execute(
-                    "INSERT INTO animes (title, synopsis, start_date, end_date) VALUES (?,?,?,?)",
+                    "INSERT INTO animes (title, synopsis, start_date, end_date, cover_image) VALUES (?,?,?,?,?)",
                     params![
                         anime.attributes.canonical_title,
                         anime.attributes.synopsis.unwrap_or("".to_owned()),
                         anime.attributes.start_date.unwrap_or("".to_owned()),
                         anime.attributes.end_date.unwrap_or("".to_owned()),
+                        img,
                     ],
                 )
                 .unwrap();
@@ -56,15 +62,23 @@ pub struct AnimeItem {
     pub synopsis: String,
     pub start_date: String,
     pub end_date: String,
+    pub cover_image: String,
 }
 
 impl AnimeItem {
-    pub fn new(title: String, synopsis: String, start_date: String, end_date: String) -> AnimeItem {
+    pub fn new(
+        title: String,
+        synopsis: String,
+        start_date: String,
+        end_date: String,
+        cover_image: String,
+    ) -> AnimeItem {
         AnimeItem {
             title: title.replace('\"', ""),
             synopsis,
             start_date,
             end_date,
+            cover_image,
         }
     }
 
@@ -89,6 +103,7 @@ impl Default for AnimeItem {
             String::from("empty_synopsis"),
             String::from("empty_start_date"),
             String::from("empty_end_date"),
+            String::from("empty_cover_image"),
         )
     }
 }
@@ -122,7 +137,7 @@ pub fn load_data() -> Result<AnimeItemList, Box<dyn Error>> {
     let conn = Connection::open(DBFILE)?;
 
     let mut stmt = conn.prepare(
-        "SELECT title, synopsis, start_date, end_date
+        "SELECT title, synopsis, start_date, end_date, cover_image
         FROM animes
         ORDER BY title
         LIMIT 1000
@@ -135,6 +150,7 @@ pub fn load_data() -> Result<AnimeItemList, Box<dyn Error>> {
             row.get(1)?,
             row.get(2)?,
             row.get(3)?,
+            row.get(4)?,
         ))
     })?;
 
@@ -171,12 +187,18 @@ pub struct Attributes {
     slug: String,
     synopsis: Option<String>,
     titles: Titles,
+    cover_image: Option<CoverImages>,
     canonical_title: String,
     average_rating: Option<String>,
     start_date: Option<String>,
     end_date: Option<String>,
     episode_count: Option<i64>,
     status: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CoverImages {
+    original: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

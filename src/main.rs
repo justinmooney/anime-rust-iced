@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use iced::widget::{
-    button, column, progress_bar, row, scrollable, text, text_input, Column, Space,
+    button, column, image, progress_bar, row, scrollable, text, text_input, Column, Space,
 };
 use iced::{alignment, executor, window, Application, Command, Element, Length, Settings, Theme};
 
@@ -105,7 +105,10 @@ impl Application for AnimeApp {
                 .width(Length::FillPortion(1))
                 .horizontal_alignment(alignment::Horizontal::Center),
             Space::with_height(24),
-            text(&a.synopsis)
+            text(&a.synopsis).width(Length::FillPortion(1)),
+            Space::with_height(24),
+            // TODO: images aren't displaying
+            image(&a.cover_image)
                 .width(Length::FillPortion(1))
                 .height(Length::FillPortion(1)),
         ]
