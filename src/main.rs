@@ -5,7 +5,7 @@ use iced::widget::{
 };
 use iced::{alignment, executor, window, Application, Command, Element, Length, Settings, Theme};
 
-use anime::{get_downloader, load_data, AnimeItem, AnimeItemList};
+use anime::{get_downloader, load_data, AnimeItem, AnimeItemList, Database};
 
 fn main() -> Result<(), iced::Error> {
     AnimeApp::run(Settings {
@@ -74,7 +74,7 @@ impl Application for AnimeApp {
 
     fn view(&self) -> Element<'_, Message> {
         let mut titles = Column::new()
-            .width(620)
+            .width(300)
             .align_items(alignment::Alignment::Center);
 
         let search_box = text_input("search...", "").padding(5);
@@ -92,7 +92,7 @@ impl Application for AnimeApp {
             .height(Length::FillPortion(1))
             .width(Length::FillPortion(1));
 
-        let list_widget = column![search_box, anime_list];
+        let list_widget = column![search_box, anime_list].width(300);
 
         let a = &self.display_content;
 
@@ -109,7 +109,6 @@ impl Application for AnimeApp {
                 .width(Length::FillPortion(1))
                 .height(Length::FillPortion(1)),
         ]
-        .width(600)
         .padding(10);
 
         let mut layout = column![];
@@ -124,10 +123,12 @@ impl Application for AnimeApp {
 }
 
 async fn get_animes() -> Arc<AnimeItemList> {
-    let mut downloader = get_downloader().unwrap();
-    while downloader.has_remaining() {
-        println!("{:#?}", downloader);
-        downloader.fetch_next();
+    if !Database::exists() {
+        let mut downloader = get_downloader().unwrap();
+        while downloader.has_remaining() {
+            println!("{:#?}", downloader);
+            downloader.fetch_next();
+        }
     }
 
     Arc::new(load_data().unwrap())

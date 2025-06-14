@@ -69,12 +69,15 @@ impl AnimeItem {
     }
 
     pub fn display_date(&self) -> String {
-        if self.start_date == self.end_date {
-            format!("({})", self.start_date)
-        } else if !self.start_date.is_empty() & self.end_date.is_empty() {
-            format!("({} - ongoing)", self.start_date)
+        let start_date = self.start_date.replace("-", "/");
+        let end_date = self.end_date.replace("-", "/");
+
+        if start_date == end_date {
+            format!("({})", start_date)
+        } else if !start_date.is_empty() & end_date.is_empty() {
+            format!("({} - ongoing)", start_date)
         } else {
-            format!("({} - {})", self.start_date, self.end_date)
+            format!("({} - {})", start_date, end_date)
         }
     }
 }
